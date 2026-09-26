@@ -12,7 +12,7 @@ def test_loads_the_tech_careers_niche():
 
     assert niche.name == "tech-careers"
     assert "software" in niche.description
-    assert niche.formats == [
+    assert niche.formats == (
         "personal story",
         "tutorial / how-to",
         "advice / tips list",
@@ -24,7 +24,7 @@ def test_loads_the_tech_careers_niche():
         "news / update",
         "Q&A",
         "other",
-    ]
+    )
 
 
 @pytest.mark.parametrize("formats", ['[]', '["tutorial / how-to"]'])

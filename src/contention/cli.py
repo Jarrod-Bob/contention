@@ -4,7 +4,7 @@ import typer
 
 from contention import db
 
-app = typer.Typer(help="Content intelligence over a public YouTube Corpus.")
+app = typer.Typer()
 
 
 @app.callback()

@@ -9,7 +9,7 @@ from pathlib import Path
 class Niche:
     name: str
     description: str
-    formats: list[str]
+    formats: tuple[str, ...]
 
 
 def load_niche(folder: Path) -> Niche:
@@ -25,5 +25,5 @@ def load_niche(folder: Path) -> Niche:
     return Niche(
         name=folder.name,
         description=data["description"].strip(),
-        formats=list(data["formats"]),
+        formats=tuple(data["formats"]),
     )

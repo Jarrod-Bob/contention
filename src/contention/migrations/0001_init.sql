@@ -4,9 +4,14 @@
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- A band of Channel subscriber counts, recorded when the Channel is curated.
+CREATE TYPE tier AS ENUM ('1k-10k', '10k-100k', '100k-500k', '500k-1M', '1M+');
+
 CREATE TABLE channels (
     channel_id          text PRIMARY KEY,
+    handle              text NOT NULL UNIQUE,  -- as typed in the niche folder's Channel list
     title               text NOT NULL,
+    tier                tier NOT NULL,
     uploads_playlist_id text NOT NULL,
     last_refreshed_at   timestamptz NOT NULL
 );
@@ -16,7 +21,6 @@ CREATE TABLE channels (
 CREATE TABLE niche_channels (
     niche      text NOT NULL,
     channel_id text NOT NULL REFERENCES channels ON DELETE CASCADE,
-    tier       text NOT NULL CHECK (tier IN ('1k-10k', '10k-100k', '100k-500k', '500k-1M', '1M+')),
     PRIMARY KEY (niche, channel_id)
 );
 
