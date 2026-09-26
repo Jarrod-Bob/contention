@@ -17,8 +17,12 @@ A public YouTube channel curated into a Niche because most of its long-form outp
 _Avoid_: Creator, account, publisher
 
 **Video**:
-One item in the Corpus: a published YouTube video with its metadata, public metrics, and transcript.
+One item in the Corpus: a published YouTube video with its public metadata (title, description, Chapters, tags, topic categories) and public metrics. Never its transcript.
 _Avoid_: Post, content item, clip
+
+**Chapter**:
+A timestamped section title a creator lists in a Video's description, e.g. "2:14 How to negotiate". The only public outline of what happens inside a Video.
+_Avoid_: Section, segment, timestamp
 
 **Audience**:
 A free-text description of the viewers a Video (or a Draft, or a strategy question) is aimed at, e.g. "early-career software engineers". Inferred from content, never measured.
