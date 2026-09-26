@@ -20,6 +20,14 @@ _Avoid_: Creator, account, publisher
 One item in the Corpus: a published YouTube video with its public metadata (title, description, Chapters, tags, topic categories) and public metrics. Never its transcript.
 _Avoid_: Post, content item, clip
 
+**Snapshot**:
+The public metrics of a Video or Channel as read at one moment, with that moment recorded. Public data can't be kept for more than 30 days, so only recent Snapshots exist.
+_Avoid_: Stats, reading, record
+
+**Tier**:
+A band of Channel subscriber counts: 1k–10k, 10k–100k, 100k–500k, 500k–1M, or 1M+. Channels are curated across Tiers, and a Draft can be predicted for a Tier instead of a real Channel.
+_Avoid_: Size, bracket, level
+
 **Chapter**:
 A timestamped section title a creator lists in a Video's description, e.g. "2:14 How to negotiate". The only public outline of what happens inside a Video.
 _Avoid_: Section, segment, timestamp
