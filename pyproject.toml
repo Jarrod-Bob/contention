@@ -1,0 +1,23 @@
+[project]
+name = "contention"
+version = "0.1.0"
+description = "Content intelligence over a public YouTube Corpus: a Content Strategist and a Content Optimiser."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "psycopg[binary]>=3.2",
+    "typer>=0.12",
+]
+
+[project.scripts]
+contention = "contention.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
