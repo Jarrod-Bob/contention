@@ -36,6 +36,10 @@ _Avoid_: Section, segment, timestamp
 A free-text description of the viewers a Video (or a Draft, or a strategy question) is aimed at, e.g. "early-career software engineers". Inferred from content, never measured.
 _Avoid_: Demographic, segment, target market
 
+**Audience group**:
+A cluster of similar Audiences, e.g. "junior devs" and "new grads in tech", labelled in a few words. How Audiences are compared and grouped.
+_Avoid_: Segment, demographic, persona
+
 **Theme**:
 A group of similar Videos within a Niche, found by clustering and labelled in a few words, e.g. "salary negotiation" or "first-job mistakes". The Content Strategist reasons about Themes.
 _Avoid_: Topic, cluster, category
