@@ -13,3 +13,4 @@ The MVP builds and queries one Niche at a time, and everything niche-specific (d
 
 - A Channel in two Niches' lists is stored once.
 - Switching Niches does not delete the old one: its data must still be refreshed or purged within 30 days under the YouTube Developer Policies.
+- **What the niche folder holds** (refined when resolving "Interface for the Strategist and Optimiser", #23): only what the user wrote, meaning the Niche description, the Format list, the Channel list as handles the user typed, and test query texts. Eval labels, retrieval grades, usefulness ratings and stored answers reference Videos by id, and no exception lets API ids outlive the 30-day limit, so they live in Postgres and follow their Video (ADR 0003). Aggregate eval scores per milestone run are kept permanently.
