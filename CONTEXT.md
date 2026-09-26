@@ -28,6 +28,14 @@ _Avoid_: Section, segment, timestamp
 A free-text description of the viewers a Video (or a Draft, or a strategy question) is aimed at, e.g. "early-career software engineers". Inferred from content, never measured.
 _Avoid_: Demographic, segment, target market
 
+**Theme**:
+A group of similar Videos within a Niche, found by clustering and labelled in a few words, e.g. "salary negotiation" or "first-job mistakes". The Content Strategist reasons about Themes.
+_Avoid_: Topic, cluster, category
+
+**Format**:
+The kind of Video, from a fixed list (e.g. personal story, tutorial, listicle, interview), inferred from content. Distinct from duration.
+_Avoid_: Style, type, genre
+
 **Draft**:
 Content the user has not yet published, submitted to the Content Optimiser as text (not as media).
 _Avoid_: Upload, submission, new video
