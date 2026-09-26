@@ -5,8 +5,16 @@ A single-user content intelligence tool over public YouTube content, built to le
 ## Language
 
 **Corpus**:
-The collection of public YouTube videos, from many channels, that contention indexes and learns from. Carries only publicly visible metadata and metrics.
+The collection of public YouTube videos that contention indexes and learns from: every English long-form Video published in the last 3 years by the Channels of one Niche. Carries only publicly visible metadata and metrics.
 _Avoid_: Dataset, knowledge base, historical content
+
+**Niche**:
+The subject area a Corpus covers, e.g. "tech careers". Defined by its curated list of Channels, not by classifying individual Videos.
+_Avoid_: Topic, category, vertical
+
+**Channel**:
+A public YouTube channel curated into a Niche because most of its long-form output belongs there. All its long-form Videos enter the Corpus, including the occasional off-topic one.
+_Avoid_: Creator, account, publisher
 
 **Video**:
 One item in the Corpus: a published YouTube video with its metadata, public metrics, and transcript.
