@@ -1,5 +1,7 @@
 # Predict raw log views; outperformance is explained, never the target
 
+> **Partly superseded by [ADR 0008](0008-derived-data-follow-the-clear-text.md):** where the policy line is drawn. The target choice stands; outperformance is no longer shown to the user.
+
 The predictor's target is log(`viewCount`) at the latest snapshot, not a ratio such as views relative to the channel median, engagement rate or like rate. The YouTube Developer Policies ban using API data "to create new or derived data or metrics", and we read that strictly: the target stays a raw public metric, and channel size and Video age go in as features so the model learns each Channel's baseline itself. Outperformance can still be shown to the user as an explanation, but it is never trained on.
 
 ## Considered Options

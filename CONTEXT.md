@@ -33,19 +33,15 @@ A timestamped section title a creator lists in a Video's description, e.g. "2:14
 _Avoid_: Section, segment, timestamp
 
 **Audience**:
-A free-text description of the viewers a Video (or a Draft, or a strategy question) is aimed at, e.g. "early-career software engineers". Inferred from content, never measured.
+A free-text description of the viewers a Draft or a strategy question is aimed at, e.g. "early-career software engineers". Written or inferred from the user's own text, never from Corpus Videos, and never measured.
 _Avoid_: Demographic, segment, target market
 
-**Audience group**:
-A cluster of similar Audiences, e.g. "junior devs" and "new grads in tech", labelled in a few words. How Audiences are compared and grouped.
-_Avoid_: Segment, demographic, persona
-
 **Theme**:
-A group of similar Videos within a Niche, found by clustering and labelled in a few words, e.g. "salary negotiation" or "first-job mistakes". The Content Strategist reasons about Themes.
+A group of similar Videos within a Niche, found by clustering their text. Used only inside contention; never named, labelled or shown as a category.
 _Avoid_: Topic, cluster, category
 
 **Format**:
-The kind of Video, from a fixed list (e.g. personal story, tutorial, listicle, interview), inferred from content. Distinct from duration.
+The kind of Draft, from a fixed list (e.g. personal story, tutorial, listicle, interview). Never inferred for Corpus Videos. Distinct from duration.
 _Avoid_: Style, type, genre
 
 **Draft**:
