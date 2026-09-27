@@ -77,3 +77,42 @@ Check out my course on system design
         "First impressions on the new phone.\n"
         "Read my notes on the launch at before watching."
     )
+
+
+def test_keeps_the_channels_own_words_about_sponsorship_platforms_and_reviews():
+    description = """How I got H-1B visa sponsorship at Google.
+I rewrote my LinkedIn headline and got 3x recruiter messages.
+We check out three resumes live.
+Connect with me on LinkedIn: @example
+"""
+
+    assert clean_description(description) == (
+        "How I got H-1B visa sponsorship at Google.\n"
+        "I rewrote my LinkedIn headline and got 3x recruiter messages.\n"
+        "We check out three resumes live."
+    )
+
+
+def test_drops_chapter_lines_which_are_kept_as_chapters():
+    description = "My first year.\n0:00 Intro\n1:15 The mistake\n4:30 Recovery\nThanks for watching."
+
+    assert clean_description(description) == "My first year.\nThanks for watching."
+
+
+def test_drops_link_list_headers_contact_lines_and_sponsor_thanks():
+    description = """Casey talks about staying at one company long term.
+Thank you WorkOS for sponsoring. Try them out for free here
+You can find Casey here:
+The Full Episode:
+For sponsorship & business inquiries: sponsor@example.dev
+Why most engineers plateau after five years.
+"""
+
+    assert clean_description(description) == (
+        "Casey talks about staying at one company long term.\n"
+        "Why most engineers plateau after five years."
+    )
+
+
+def test_drops_decorative_lines():
+    assert clean_description("Intro to the video.\n━━━━━━━━━━\n* * *\nMore detail.") == "Intro to the video.\nMore detail."

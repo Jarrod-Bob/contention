@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from contention.collect import YouTube
 from contention.niche import TIERS, load_niche
+from contention.youtube import YouTube
 
 
 def _toml_string(value: str) -> str:

@@ -38,7 +38,7 @@ def test_refresh_collects_long_form_english_videos_of_curated_channels(conn):
     assert conn.execute("SELECT video_id FROM videos ORDER BY video_id").fetchall() == [("long",), ("no-language",)]
     assert conn.execute("SELECT count(*) FROM video_snapshots").fetchone() == (2,)
     assert conn.execute("SELECT cleaned_description FROM videos WHERE video_id = 'long'").fetchone() == (
-        "My first year.\n0:00 Intro\n1:15 The mistake\n4:30 Recovery",
+        "My first year.",
     )
     assert conn.execute(
         "SELECT start_seconds, title FROM chapters WHERE video_id = 'long' ORDER BY position"

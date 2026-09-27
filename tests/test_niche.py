@@ -35,3 +35,13 @@ def test_rejects_a_format_list_without_other(tmp_path, formats):
 
     with pytest.raises(ValueError, match="other"):
         load_niche(folder)
+
+
+def test_rejects_a_channel_list_with_an_unknown_tier(tmp_path):
+    folder = tmp_path / "broken-niche"
+    folder.mkdir()
+    (folder / "niche.toml").write_text('description = "A niche."\nformats = ["other"]\n')
+    (folder / "channels.toml").write_text('[[channels]]\nhandle = "@a"\ntier = "10k-50k"\nreason = "Typo"\n')
+
+    with pytest.raises(ValueError, match="10k-50k"):
+        load_niche(folder)

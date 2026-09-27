@@ -2,29 +2,20 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Protocol
-
 import psycopg
 
-from contention.niche import Niche
+from contention.niche import CuratedChannel, Niche
 from contention.text import clean_description, parse_chapters
-from contention.youtube import ChannelDetails, VideoDetails
+from contention.youtube import ChannelDetails, VideoDetails, YouTube
 
 WINDOW = timedelta(days=3 * 365)  # the Corpus holds Videos from the last 3 years
 SHORTS_MAX_SECONDS = 180  # Shorts run up to 3 minutes; long-form is anything longer
 
 
-class YouTube(Protocol):
-    quota_used: int
-
-    def channel_by_handle(self, handle: str) -> ChannelDetails | None: ...
-    def channels(self, ids: list[str]) -> list[ChannelDetails]: ...
-    def upload_ids(self, playlist_id: str, published_after: datetime) -> list[str]: ...
-    def videos(self, ids: list[str]) -> list[VideoDetails]: ...
-
-
 @dataclass(frozen=True)
 class RefreshReport:
+    """What a refresh did: counts, quota spent, and handles YouTube didn't recognise."""
+
     channels: int
     videos: int
     quota_used: int
@@ -32,6 +23,7 @@ class RefreshReport:
 
 
 def is_long_form(video: VideoDetails) -> bool:
+    """Longer than a Short can be."""
     return video.duration_seconds > SHORTS_MAX_SECONDS
 
 
@@ -47,24 +39,25 @@ def refresh(conn: psycopg.Connection, youtube: YouTube, niche: Niche, now: datet
     Writes a timestamped Snapshot for every Channel and Video, and each Video's
     cleaned description and Chapters.
     """
-    tiers = {c.handle: c.tier for c in niche.channels}
-    known = dict(conn.execute("SELECT handle, channel_id FROM channels WHERE handle = ANY(%s)", (list(tiers),)))
+    curated_by_handle = {c.handle: c for c in niche.channels}
+    channel_ids_by_handle = dict(conn.execute(
+        "SELECT handle, channel_id FROM channels WHERE handle = ANY(%s)", (list(curated_by_handle),)
+    ))
     unknown_handles = []
-    for handle in tiers.keys() - known.keys():
+    for handle in curated_by_handle.keys() - channel_ids_by_handle.keys():
         found = youtube.channel_by_handle(handle)
         if found:
-            known[handle] = found.channel_id
+            channel_ids_by_handle[handle] = found.channel_id
         else:
             unknown_handles.append(handle)
-    handles = {channel_id: handle for handle, channel_id in known.items()}
+    curated_by_channel_id = {cid: curated_by_handle[handle] for handle, cid in channel_ids_by_handle.items()}
     conn.commit()  # end the lookup's implicit transaction, so each Channel below commits on its own
 
     video_count = 0
-    channels = youtube.channels(list(handles))
+    channels = youtube.channels(list(curated_by_channel_id))
     for channel in channels:
-        handle = handles[channel.channel_id]
         with conn.transaction():
-            _store_channel(conn, niche, channel, handle, tiers[handle], now)
+            _store_channel(conn, niche, channel, curated_by_channel_id[channel.channel_id], now)
             ids = youtube.upload_ids(channel.uploads_playlist_id, published_after=now - WINDOW)
             for video in youtube.videos(ids):
                 if is_long_form(video) and is_english(video):
@@ -74,7 +67,9 @@ def refresh(conn: psycopg.Connection, youtube: YouTube, niche: Niche, now: datet
     return RefreshReport(len(channels), video_count, youtube.quota_used, tuple(sorted(unknown_handles)))
 
 
-def _store_channel(conn, niche: Niche, channel: ChannelDetails, handle: str, tier: str, now: datetime) -> None:
+def _store_channel(
+    conn: psycopg.Connection, niche: Niche, channel: ChannelDetails, curated: CuratedChannel, now: datetime
+) -> None:
     conn.execute(
         """
         INSERT INTO channels (channel_id, handle, title, tier, uploads_playlist_id, last_refreshed_at)
@@ -83,7 +78,7 @@ def _store_channel(conn, niche: Niche, channel: ChannelDetails, handle: str, tie
             tier = EXCLUDED.tier, uploads_playlist_id = EXCLUDED.uploads_playlist_id,
             last_refreshed_at = EXCLUDED.last_refreshed_at
         """,
-        (channel.channel_id, handle, channel.title, tier, channel.uploads_playlist_id, now),
+        (channel.channel_id, curated.handle, channel.title, curated.tier, channel.uploads_playlist_id, now),
     )
     conn.execute(
         "INSERT INTO niche_channels (niche, channel_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
@@ -98,7 +93,7 @@ def _store_channel(conn, niche: Niche, channel: ChannelDetails, handle: str, tie
     )
 
 
-def _store_video(conn, video: VideoDetails, now: datetime) -> None:
+def _store_video(conn: psycopg.Connection, video: VideoDetails, now: datetime) -> None:
     conn.execute(
         """
         INSERT INTO videos (video_id, channel_id, published_at, title, description, cleaned_description,

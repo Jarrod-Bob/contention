@@ -31,8 +31,8 @@ def load_niche(folder: Path) -> Niche:
 
     The folder name is the Niche's name.
 
-    Raises ValueError if the Format list doesn't include "other", the fallback
-    every Video must be able to fall into.
+    Raises ValueError if the Format list doesn't include "other" (the fallback
+    every Video must be able to fall into), or a listed Channel's Tier isn't one of TIERS.
     """
     folder = Path(folder)
     data = tomllib.loads((folder / "niche.toml").read_text())
@@ -40,6 +40,9 @@ def load_niche(folder: Path) -> Niche:
         raise ValueError(f'{folder.name}: the Format list must include "other"')
     channels_file = folder / "channels.toml"
     listed = tomllib.loads(channels_file.read_text()).get("channels", []) if channels_file.exists() else []
+    for entry in listed:
+        if entry["tier"] not in TIERS:
+            raise ValueError(f"{folder.name}: {entry['handle']} has Tier {entry['tier']!r}; use one of {', '.join(TIERS)}")
     return Niche(
         name=folder.name,
         description=data["description"].strip(),

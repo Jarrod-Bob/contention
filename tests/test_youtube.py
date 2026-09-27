@@ -117,3 +117,17 @@ def test_looks_up_channels_by_handle_and_by_id():
     both = youtube.channels(["UCabc", "UCdef"])
     assert [c.subscriber_count for c in both] == [12300, None]
     assert youtube.quota_used == 3
+
+
+def test_upload_ids_skips_private_or_deleted_videos_without_a_publish_date():
+    transport, _ = fake_api({
+        ("playlistItems", None): {"items": [
+            item("v1", "2026-09-01T00:00:00Z"),
+            {"contentDetails": {"videoId": "private"}},
+            item("v2", "2026-08-01T00:00:00Z"),
+        ]},
+    })
+
+    ids = HttpYouTube("key", transport=transport).upload_ids("UU123", published_after=datetime(2023, 9, 27, tzinfo=UTC))
+
+    assert ids == ["v1", "v2"]

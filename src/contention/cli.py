@@ -19,7 +19,7 @@ app = typer.Typer()
 channels_app = typer.Typer(help="Curate the Channels of a Niche.")
 app.add_typer(channels_app, name="channels")
 
-NicheOption = typer.Option("tech-careers", help="The Niche folder under niches/.")
+NICHE_OPTION = typer.Option("tech-careers", help="The Niche folder under niches/.")
 
 
 @app.callback()
@@ -53,7 +53,7 @@ def channels_add(
     handle: str = typer.Argument(help="The Channel's handle, e.g. @example."),
     tier: str = typer.Option(help=f"One of: {', '.join(TIERS)}."),
     reason: str = typer.Option(help="One line on why this Channel belongs in the Niche."),
-    niche: str = NicheOption,
+    niche: str = NICHE_OPTION,
 ) -> None:
     """Add a Channel to the Niche's Channel list (checks the handle with YouTube: 1 quota unit)."""
     try:
@@ -65,7 +65,7 @@ def channels_add(
 
 
 @app.command()
-def refresh(niche: str = NicheOption) -> None:
+def refresh(niche: str = NICHE_OPTION) -> None:
     """Collect the Niche's Channels and their long-form English Videos from YouTube."""
     youtube = _youtube()
     with db.connect() as conn:
