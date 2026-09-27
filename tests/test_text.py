@@ -62,3 +62,18 @@ My affiliate links: https://amzn.to/xyz
         "How I negotiated a 30% raise as a junior developer.\n"
         "Read the full guide at before your review."
     )
+
+
+def test_drops_link_labels_and_community_promotion():
+    description = """First impressions on the new phone.
+Apple Photos to Lightroom converter: https://example.com/converter
+Read my notes on the launch at https://example.com/notes before watching.
+🌊 Join our private group
+Your Community for Crypto, Stocks, DeFi & Tech. Get the inside track on trading.
+Check out my course on system design
+"""
+
+    assert clean_description(description) == (
+        "First impressions on the new phone.\n"
+        "Read my notes on the launch at before watching."
+    )

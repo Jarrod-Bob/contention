@@ -55,9 +55,11 @@ _URL = re.compile(r"\S*https?://\S+|\bwww\.\S+")
 _HASHTAG = re.compile(r"#\w+")
 _PROMOTIONAL = re.compile(
     r"sponsor|use code|promo code|discount|% off|affiliate|patreon|merch"
-    r"|follow me|subscribe|instagram|twitter|tiktok|linkedin|discord|newsletter",
+    r"|follow me|subscribe|instagram|twitter|tiktok|linkedin|discord|newsletter"
+    r"|join (?:our|my)|(?:your|our|my) community|private group|check out|my course",
     re.IGNORECASE,
 )
+_LINK_LABEL_MAX_WORDS = 6  # a line that only labels a link, like "My gear:"
 
 
 def clean_description(description: str) -> str:
@@ -69,8 +71,11 @@ def clean_description(description: str) -> str:
     for line in description.splitlines():
         if _PROMOTIONAL.search(line):
             continue
-        line = _HASHTAG.sub("", _URL.sub("", line))
-        line = " ".join(line.split())
+        without_links = _URL.sub("", line)
+        had_link = without_links != line
+        line = " ".join(_HASHTAG.sub("", without_links).split())
+        if had_link and (line.endswith((":", "-", "–")) or len(line.split()) <= _LINK_LABEL_MAX_WORDS):
+            continue
         if line:
             kept.append(line)
     return "\n".join(kept)
