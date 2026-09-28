@@ -1,5 +1,7 @@
 # Predictor: prior-uploads Channel features, LightGBM with conformalised ranges
 
+> **Amended by [ADR 0010](0010-optimiser-compares-raw-views-errors-eval-only.md):** Format is no longer a feature; Theme enters as the nearest unlabelled cluster id; out-of-fold errors are used only for evaluation.
+
 The predictor never uses a Channel's subscriber count. Channel strength comes from a prior-uploads baseline: the median log views of the Channel's ~10 Videos published before the one being predicted, their median age, and how many Videos the Channel had uploaded by then. Current subscriber counts leak the answer (a small Channel's hit multiplies its subscribers), and the 30-day storage limit means subscriber counts at publish time can never be kept. The prior-uploads baseline only looks backwards, exactly like a Draft, which knows its Channel's past Videos but not the future. The model is LightGBM, with a Ridge regression as a second baseline, and the 80% range comes from conformalised quantile regression (CQR) so its coverage is calibrated.
 
 ## Considered Options
