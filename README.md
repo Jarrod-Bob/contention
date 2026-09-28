@@ -36,7 +36,13 @@ Requires macOS with [Homebrew](https://brew.sh) and [uv](https://docs.astral.sh/
    uv run contention migrate
    ```
 
-4. Run the tests:
+4. Get a YouTube Data API key. The wizard walks you through Google Cloud Console, saves the key to `.env` (git-ignored) and checks that it works:
+
+   ```sh
+   scripts/setup-youtube-api-key.sh
+   ```
+
+5. Run the tests:
 
    ```sh
    uv run pytest

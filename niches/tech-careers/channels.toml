@@ -1,0 +1,23 @@
+# The curated Channels of this Niche: the source of truth for `contention refresh`.
+# Add entries with `contention channels add @handle --tier <tier> --reason "..."`.
+# Tiers: 1k-10k, 10k-100k, 100k-500k, 500k-1M, 1M+
+
+[[channels]]
+handle = "@NeetCode"
+tier = "1M+"
+reason = "Coding interview prep and career advice for software engineers"
+
+[[channels]]
+handle = "@TechLead"
+tier = "1M+"
+reason = "Career commentary from an ex-big-tech engineer"
+
+[[channels]]
+handle = "@KevinNaughtonJr"
+tier = "100k-500k"
+reason = "Getting into tech and passing interviews"
+
+[[channels]]
+handle = "@hello_interview"
+tier = "100k-500k"
+reason = "System design interview prep"
