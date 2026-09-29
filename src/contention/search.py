@@ -51,6 +51,8 @@ class Document:
 
 @dataclass(frozen=True)
 class Match:
+    """A Video the index ranked for a query, with its BM25 score."""
+
     video_id: str
     score: float
 
@@ -85,6 +87,8 @@ class KeywordIndex:
             length = 0.0
             for name, tokens in document.field_tokens().items():
                 weight = getattr(weights, name)
+                if not weight:  # a field switched off shouldn't count towards document frequency either
+                    continue
                 for term, count in Counter(tokens).items():
                     counts[term] += weight * count
                 length += weight * len(tokens)
@@ -127,6 +131,8 @@ def _okapi_idf(document_frequencies: Counter[str], size: int, epsilon: float) ->
 
 @dataclass(frozen=True)
 class SearchResult:
+    """A ranked Video as `search` shows it: a Match plus its title and Channel title."""
+
     video_id: str
     title: str
     channel_title: str

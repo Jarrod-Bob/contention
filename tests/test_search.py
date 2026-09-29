@@ -95,6 +95,15 @@ def test_field_weights_change_the_ranking():
     assert [result.video_id for result in ranked] == ["in-description", "in-title"]
 
 
+def test_a_field_weighted_zero_is_left_out_entirely():
+    without_tags = FieldWeights(tags=0)
+    with_tags_dropped = [document(d.video_id, d.title, d.chapters, (), d.description) for d in SAMPLE]
+
+    assert KeywordIndex(SAMPLE, without_tags).scores("job") == pytest.approx(
+        KeywordIndex(with_tags_dropped, without_tags).scores("job")
+    )
+
+
 def test_a_term_in_most_videos_still_counts_a_little():
     documents = [document(f"career-{n}", f"Career story number{n}") for n in range(5)] + FILLER[:2]
     index = KeywordIndex(documents)
