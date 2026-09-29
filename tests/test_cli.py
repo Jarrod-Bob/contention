@@ -47,7 +47,8 @@ def test_refresh_purges_channels_dropped_from_the_list_and_logs_the_run(database
     assert "refreshed 1 Channels" in log.read_text()
 
 
-def test_search_prints_ranked_videos(database_url):
+def test_search_prints_ranked_videos(database_url, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "ARTEFACTS_DIR", tmp_path)
     with psycopg.connect(database_url) as conn:
         db.migrate(conn, db.MIGRATIONS_DIR)
         insert_channel(conn, "UC1", "tech-careers")
@@ -65,7 +66,25 @@ def test_search_prints_ranked_videos(database_url):
     assert lines[1].startswith(" 2.") and "My week" in lines[1] and "Channel UC1" in lines[1]
 
 
-def test_search_says_when_nothing_matches(database_url):
+def test_search_purges_stale_data_before_answering(database_url, tmp_path, monkeypatch):
+    with psycopg.connect(database_url) as conn:
+        db.migrate(conn, db.MIGRATIONS_DIR)
+        insert_channel(conn, "UC1", "tech-careers")
+        insert_video(conn, "fresh", title="Salary talk")
+        insert_video(conn, "stale", title="Salary talk")
+        conn.execute("UPDATE videos SET last_refreshed_at = now() - interval '29 days' WHERE video_id = 'stale'")
+    monkeypatch.setattr(cli, "ARTEFACTS_DIR", tmp_path)
+
+    result = runner.invoke(app, ["search", "salary"], env={"DATABASE_URL": database_url})
+
+    assert result.exit_code == 0, result.output
+    assert "fresh" in result.output and "stale" not in result.output
+    with psycopg.connect(database_url) as conn:
+        assert conn.execute("SELECT video_id FROM videos").fetchall() == [("fresh",)]
+
+
+def test_search_says_when_nothing_matches(database_url, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "ARTEFACTS_DIR", tmp_path)
     with psycopg.connect(database_url) as conn:
         db.migrate(conn, db.MIGRATIONS_DIR)
 

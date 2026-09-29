@@ -12,7 +12,7 @@ from contention.artefacts import run_dir
 from contention.channels import add_channel
 from contention.collect import refresh as refresh_corpus
 from contention.niche import TIERS, load_niche
-from contention.purge import purge
+from contention.purge import purge, startup_guard
 from contention.search import search as search_corpus
 from contention.youtube import HttpYouTube
 
@@ -98,6 +98,7 @@ def search(
 ) -> None:
     """Keyword-search the Niche's Videos (BM25) and print them best first."""
     with db.connect() as conn:
+        startup_guard(conn, ARTEFACTS_DIR, datetime.now(UTC))
         results = search_corpus(conn, niche, query, limit=limit)
     if not results:
         typer.echo(f"no Videos match {query!r}")

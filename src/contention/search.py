@@ -3,6 +3,7 @@
 import math
 import re
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import psycopg
@@ -63,9 +64,8 @@ class KeywordIndex:
     Each field's term counts and length are multiplied by its weight and summed,
     so a title word counts like several description words (a simple BM25F with
     one length normalisation). With every weight at 1 this is plain BM25 over the
-    fields run together, and scores equal `rank_bm25.BM25Okapi`'s, including its
-    idf floor: a term in more than half the Videos would get a negative idf, so it
-    gets `epsilon` times the average idf instead.
+    fields run together. `idf` defaults to `lucene_idf`; with `okapi_idf` and every
+    weight at 1, scores equal `rank_bm25.BM25Okapi`'s (the ADR 0005 cross-check).
     """
 
     def __init__(
@@ -74,7 +74,7 @@ class KeywordIndex:
         weights: FieldWeights = FieldWeights(),
         k1: float = 1.5,
         b: float = 0.75,
-        epsilon: float = 0.25,
+        idf: Callable[[Counter[str], int], dict[str, float]] | None = None,
     ):
         self.k1 = k1
         self.b = b
@@ -96,7 +96,7 @@ class KeywordIndex:
             self.lengths.append(length)
             document_frequencies.update(counts.keys())
         self.average_length = sum(self.lengths) / len(documents) if documents else 0.0
-        self.idf = _okapi_idf(document_frequencies, len(documents), epsilon)
+        self.idf = (idf or lucene_idf)(document_frequencies, len(documents))
 
     def scores(self, query: str) -> dict[str, float]:
         """Every indexed Video's score for the query; 0 for Videos sharing no term with it."""
@@ -118,7 +118,21 @@ class KeywordIndex:
         return [Match(video_id, score) for video_id, score in ranked[:limit] if score > 0]
 
 
-def _okapi_idf(document_frequencies: Counter[str], size: int, epsilon: float) -> dict[str, float]:
+def lucene_idf(document_frequencies: Counter[str], size: int) -> dict[str, float]:
+    """Each term's idf, always positive and falling as more Videos contain the term."""
+    return {
+        term: math.log(1 + (size - frequency + 0.5) / (frequency + 0.5))
+        for term, frequency in document_frequencies.items()
+    }
+
+
+def okapi_idf(document_frequencies: Counter[str], size: int, epsilon: float = 0.25) -> dict[str, float]:
+    """Each term's idf as `rank_bm25.BM25Okapi` computes it, for the cross-check.
+
+    A term in more than half the Videos would get a negative idf, so it gets
+    `epsilon` times the average idf instead. That floor isn't monotonic (a term in
+    51% of Videos can outscore one in 49%), which is why it isn't the default.
+    """
     idf = {
         term: math.log(size - frequency + 0.5) - math.log(frequency + 0.5)
         for term, frequency in document_frequencies.items()

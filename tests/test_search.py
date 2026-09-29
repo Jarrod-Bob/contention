@@ -1,10 +1,11 @@
 import random
+from collections import Counter
 
 import pytest
 from rank_bm25 import BM25Okapi
 
 from contention import db
-from contention.search import UNWEIGHTED, Document, FieldWeights, KeywordIndex, search, tokenize
+from contention.search import UNWEIGHTED, Document, FieldWeights, KeywordIndex, lucene_idf, okapi_idf, search, tokenize
 
 from corpus_rows import insert_channel, insert_video
 
@@ -39,7 +40,7 @@ def reference_scores(documents, query):
     "software engineer job", "resume", "career", "intro", "salary negotiation tech", "job job", "unknown words",
 ])
 def test_unweighted_scores_match_rank_bm25(query):
-    index = KeywordIndex(SAMPLE, UNWEIGHTED)
+    index = KeywordIndex(SAMPLE, UNWEIGHTED, idf=okapi_idf)
 
     scores = index.scores(query)
 
@@ -55,18 +56,28 @@ def test_unweighted_scores_match_rank_bm25_on_a_random_sample():
 
     documents = [document(str(n), words(8), [words(4) for _ in range(rng.randint(0, 3))],
                           [words(2) for _ in range(rng.randint(0, 4))], words(40)) for n in range(200)]
-    index = KeywordIndex(documents, UNWEIGHTED)
+    index = KeywordIndex(documents, UNWEIGHTED, idf=okapi_idf)
 
     for _ in range(20):
         query = words(5)
         assert index.scores(query) == pytest.approx(reference_scores(documents, query))
 
 
+def test_idf_is_positive_and_falls_as_more_videos_contain_the_term():
+    frequencies = Counter({f"in-{n}": n for n in range(1, 11)})
+
+    idf = lucene_idf(frequencies, size=10)
+
+    values = [idf[f"in-{n}"] for n in range(1, 11)]
+    assert all(value > 0 for value in values)
+    assert values == sorted(values, reverse=True) and len(set(values)) == len(values)
+
+
 def test_tokenize_lowercases_and_splits_on_non_word_characters():
     assert tokenize("Day-in-the-Life: SWE @ Google, 2026!") == ["day", "in", "the", "life", "swe", "google", "2026"]
 
 
-# Okapi idf is 0 for a term in exactly half the Videos, so ranking tests pad the query term's rarity.
+# Padding, so a query term is rare as it would be in a real Corpus.
 FILLER = [document(f"filler-{n}", "Unrelated video", description="Nothing to see") for n in range(6)]
 
 
