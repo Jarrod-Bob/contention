@@ -1,7 +1,10 @@
 import psycopg
 from typer.testing import CliRunner
 
+from contention import cli, db
 from contention.cli import app
+
+from fake_youtube import FakeYouTube, channel_details, video_details
 
 runner = CliRunner()
 
@@ -20,10 +23,6 @@ def test_migrate_creates_the_schema_on_an_empty_database(database_url):
 
 
 def test_refresh_purges_channels_dropped_from_the_list_and_logs_the_run(database_url, tmp_path, monkeypatch):
-    from contention import cli, db
-
-    from fake_youtube import FakeYouTube, channel_details, video_details
-
     folder = tmp_path / "niches" / "tech-careers"
     folder.mkdir(parents=True)
     (folder / "niche.toml").write_text('description = "Tech careers."\nformats = ["other"]\n')

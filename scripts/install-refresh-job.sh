@@ -26,4 +26,4 @@ launchctl bootstrap "$DOMAIN" "$TARGET"
 
 echo "Installed: contention refresh runs Sundays at 03:00."
 echo "Run it now with: launchctl kickstart $DOMAIN/$LABEL"
-echo "Output goes to $REPO/artefacts/launchd.log"
+echo "Output goes to $REPO/artefacts/run-<UTC timestamp>.launchd.log"

@@ -50,27 +50,27 @@ def test_deletes_videos_that_disappeared_from_their_channel(corpus, tmp_path, se
     refresh(corpus, FakeYouTube({"@example": channel_details("UC1")}, [video_details("kept"), *second_look]),
             curated, later)
 
-    report = purge(corpus, curated, later)
+    report = purge(corpus, curated, tmp_path, later)
 
     assert video_ids(corpus) == ["kept"]
     assert derived_rows(corpus, "gone") == {"video_snapshots": 0, "chapters": 0}
     assert report.videos == 1
 
 
-def test_deletes_videos_past_the_three_year_window(corpus):
+def test_deletes_videos_past_the_three_year_window(corpus, tmp_path):
     curated = niche(EXAMPLE)
     refresh(corpus, FakeYouTube({"@example": channel_details("UC1")}, [
         video_details("recent"),
         video_details("ageing", published_at=datetime(2023, 10, 1, tzinfo=UTC), description=CHAPTERED),
     ]), curated, NOW)
 
-    purge(corpus, curated, NOW + timedelta(days=14))
+    purge(corpus, curated, tmp_path, NOW + timedelta(days=14))
 
     assert video_ids(corpus) == ["recent"]
     assert derived_rows(corpus, "ageing") == {"video_snapshots": 0, "chapters": 0}
 
 
-def test_deletes_channels_removed_from_the_list_unless_in_another_niche(corpus):
+def test_deletes_channels_removed_from_the_list_unless_in_another_niche(corpus, tmp_path):
     youtube = FakeYouTube(
         {"@example": channel_details("UC1"), "@other": channel_details("UC2")},
         [video_details("v1", channel_id="UC1", description=CHAPTERED), video_details("v2", channel_id="UC2")],
@@ -78,7 +78,7 @@ def test_deletes_channels_removed_from_the_list_unless_in_another_niche(corpus):
     refresh(corpus, youtube, niche(EXAMPLE, OTHER), NOW)
     refresh(corpus, youtube, niche(OTHER, name="interviews"), NOW)
 
-    report = purge(corpus, niche(), NOW)
+    report = purge(corpus, niche(CuratedChannel("@newcomer", "1k-10k", "Not collected yet")), tmp_path, NOW)
 
     assert corpus.execute("SELECT channel_id FROM channels").fetchall() == [("UC2",)]
     assert corpus.execute("SELECT niche, channel_id FROM niche_channels").fetchall() == [("interviews", "UC2")]
@@ -88,28 +88,36 @@ def test_deletes_channels_removed_from_the_list_unless_in_another_niche(corpus):
     assert (report.channels, report.videos) == (1, 1)
 
 
-def test_deletes_anything_not_refreshed_within_28_days(corpus):
+def test_an_empty_channel_list_leaves_the_niche_to_age_out(corpus, tmp_path):
+    refresh(corpus, FakeYouTube({"@example": channel_details("UC1")}, [video_details("v1")]), niche(EXAMPLE), NOW)
+
+    purge(corpus, niche(), tmp_path, NOW)
+
+    assert video_ids(corpus) == ["v1"]
+
+
+def test_deletes_anything_not_refreshed_within_28_days(corpus, tmp_path):
     curated = niche(EXAMPLE)
     refresh(corpus, FakeYouTube({"@example": channel_details("UC1")},
                                 [video_details("v1", description=CHAPTERED)]), curated, NOW)
 
-    purge(corpus, curated, NOW + timedelta(days=28))
+    purge(corpus, curated, tmp_path, NOW + timedelta(days=28))
     assert video_ids(corpus) == ["v1"]
 
-    purge(corpus, curated, NOW + timedelta(days=28, seconds=1))
+    purge(corpus, curated, tmp_path, NOW + timedelta(days=28, seconds=1))
     assert video_ids(corpus) == []
     assert corpus.execute("SELECT count(*) FROM channels").fetchone() == (0,)
     assert derived_rows(corpus, "v1") == {"video_snapshots": 0, "chapters": 0}
 
 
-def test_purges_snapshots_older_than_28_days_but_keeps_their_video(corpus):
+def test_purges_snapshots_older_than_28_days_but_keeps_their_video(corpus, tmp_path):
     curated = niche(EXAMPLE)
     youtube = FakeYouTube({"@example": channel_details("UC1")}, [video_details("v1")])
     for week in range(5):
         refresh(corpus, youtube, curated, NOW + timedelta(weeks=week))
     now = NOW + timedelta(weeks=4, days=1)
 
-    report = purge(corpus, curated, now)
+    report = purge(corpus, curated, tmp_path, now)
 
     assert video_ids(corpus) == ["v1"]
     for table in ("video_snapshots", "channel_snapshots"):
@@ -119,11 +127,11 @@ def test_purges_snapshots_older_than_28_days_but_keeps_their_video(corpus):
     assert report.snapshots == 2
 
 
-def test_purge_is_committed(corpus, database_url):
+def test_purge_is_committed(corpus, database_url, tmp_path):
     curated = niche(EXAMPLE)
     refresh(corpus, FakeYouTube({"@example": channel_details("UC1")}, [video_details("v1")]), curated, NOW)
 
-    purge(corpus, niche(), NOW)
+    purge(corpus, niche(OTHER), tmp_path, NOW)
 
     with psycopg.connect(database_url) as other:
         assert other.execute("SELECT count(*) FROM videos").fetchone() == (0,)

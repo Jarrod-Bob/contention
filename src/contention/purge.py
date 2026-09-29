@@ -10,56 +10,68 @@ from pathlib import Path
 
 import psycopg
 
-from contention.artefacts import RETENTION, purge_runs
-from contention.collect import WINDOW
+from contention.artefacts import purge_runs
+from contention.collect import RETENTION, WINDOW
 from contention.niche import Niche
 
 
 @dataclass(frozen=True)
 class PurgeReport:
-    """How many Channels, Videos and Snapshots a purge deleted."""
+    """How many Channels, Videos, Snapshots and artefact runs a purge deleted."""
 
     channels: int = 0
     videos: int = 0
     snapshots: int = 0
-
-    def __add__(self, other: "PurgeReport") -> "PurgeReport":
-        return PurgeReport(self.channels + other.channels, self.videos + other.videos,
-                           self.snapshots + other.snapshots)
+    runs: int = 0
 
 
-def purge(conn: psycopg.Connection, niche: Niche, now: datetime) -> PurgeReport:
+def purge(conn: psycopg.Connection, niche: Niche, artefacts_dir: Path, now: datetime) -> PurgeReport:
     """Apply every deletion rule after a refresh of `niche`.
 
     Deletes Channels no longer on the Niche's list (unless another Niche lists
-    them), Videos missing from their Channel's latest refresh (deleted, private,
-    became Shorts or stopped qualifying), then everything `purge_stale` deletes.
+    them) with their Videos, Videos missing from their Channel's latest refresh
+    (deleted, private, became Shorts or stopped qualifying), then everything
+    `startup_guard` deletes. An empty Channel list is taken as a mistake, not as
+    "remove every Channel": those Channels age out after the retention period instead.
     """
+    unlisted_videos = channels = 0
     with conn.transaction():
-        conn.execute(
-            """
-            DELETE FROM niche_channels nc USING channels c
-            WHERE nc.channel_id = c.channel_id AND nc.niche = %s AND c.handle <> ALL(%s)
-            """,
-            (niche.name, [c.handle for c in niche.channels]),
-        )
-        unlisted = "NOT EXISTS (SELECT 1 FROM niche_channels nc WHERE nc.channel_id = {})"
-        removed = conn.execute(f"DELETE FROM videos v WHERE {unlisted.format('v.channel_id')}").rowcount
-        channels = conn.execute(f"DELETE FROM channels c WHERE {unlisted.format('c.channel_id')}").rowcount
-        vanished = conn.execute(
+        if niche.channels:
+            conn.execute(
+                """
+                DELETE FROM niche_channels nc USING channels c
+                WHERE nc.channel_id = c.channel_id AND nc.niche = %s AND c.handle <> ALL(%s)
+                """,
+                (niche.name, [c.handle for c in niche.channels]),
+            )
+            unlisted_videos = conn.execute(
+                """
+                DELETE FROM videos v
+                WHERE NOT EXISTS (SELECT 1 FROM niche_channels nc WHERE nc.channel_id = v.channel_id)
+                """
+            ).rowcount
+            channels = conn.execute(
+                """
+                DELETE FROM channels c
+                WHERE NOT EXISTS (SELECT 1 FROM niche_channels nc WHERE nc.channel_id = c.channel_id)
+                """
+            ).rowcount
+        vanished_videos = conn.execute(
             """
             DELETE FROM videos v USING channels c
             WHERE v.channel_id = c.channel_id AND v.last_refreshed_at < c.last_refreshed_at
             """
         ).rowcount
-    return PurgeReport(channels=channels, videos=removed + vanished) + purge_stale(conn, now)
+    stale = startup_guard(conn, artefacts_dir, now)
+    return PurgeReport(stale.channels + channels, stale.videos + unlisted_videos + vanished_videos,
+                       stale.snapshots, stale.runs)
 
 
-def purge_stale(conn: psycopg.Connection, now: datetime) -> PurgeReport:
-    """Delete whatever has aged out, whether or not a refresh just ran.
+def startup_guard(conn: psycopg.Connection, artefacts_dir: Path, now: datetime) -> PurgeReport:
+    """Delete whatever has aged out; run before serving answers, and by every refresh.
 
-    That is Videos past the 3-year window, Videos and Channels not refreshed
-    within the retention period, and Snapshots older than it.
+    That is Videos past the 3-year window, Videos and Channels not refreshed within
+    the retention period, Snapshots older than it, and artefact runs older than it.
     """
     stale = now - RETENTION
     with conn.transaction():
@@ -71,11 +83,5 @@ def purge_stale(conn: psycopg.Connection, now: datetime) -> PurgeReport:
             conn.execute(f"DELETE FROM {table} WHERE taken_at < %s", (stale,)).rowcount
             for table in ("video_snapshots", "channel_snapshots")
         )
-    return PurgeReport(channels=channels, videos=videos, snapshots=snapshots)
-
-
-def startup_guard(conn: psycopg.Connection, artefacts_dir: Path, now: datetime) -> PurgeReport:
-    """Run before serving answers: purge stale data and artefact runs past retention."""
-    report = purge_stale(conn, now)
-    purge_runs(artefacts_dir, now)
-    return report
+    runs = len(purge_runs(artefacts_dir, now))
+    return PurgeReport(channels, videos, snapshots, runs)

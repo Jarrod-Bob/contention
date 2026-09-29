@@ -8,7 +8,7 @@ import typer
 from dotenv import load_dotenv
 
 from contention import db
-from contention.artefacts import purge_runs, run_dir
+from contention.artefacts import run_dir
 from contention.channels import add_channel
 from contention.collect import refresh as refresh_corpus
 from contention.niche import TIERS, load_niche
@@ -76,12 +76,11 @@ def refresh(niche: str = NICHE_OPTION) -> None:
     run = run_dir(ARTEFACTS_DIR, now)
     with db.connect() as conn:
         report = refresh_corpus(conn, youtube, curated, now=now)
-        purged = purge(conn, curated, now)
-    old_runs = purge_runs(ARTEFACTS_DIR, now)
+        purged = purge(conn, curated, ARTEFACTS_DIR, now)
     lines = [
         f"refreshed {report.channels} Channels and {report.videos} Videos ({report.quota_used} quota units)",
         f"deleted {purged.channels} Channels, {purged.videos} Videos, {purged.snapshots} Snapshots"
-        f" and {len(old_runs)} artefact runs",
+        f" and {purged.runs} artefact runs",
     ]
     (run / "refresh.log").write_text("\n".join(lines) + "\n")
     for line in lines:

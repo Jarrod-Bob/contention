@@ -77,4 +77,4 @@ launchctl kickstart gui/$(id -u)/local.contention.refresh   # run it now
 scripts/install-refresh-job.sh --uninstall  # remove it
 ```
 
-The job's output goes to `artefacts/launchd.log`. Each refresh also writes a log to its own run directory, `artefacts/run-<UTC timestamp>/`, where trained models, batch files and eval outputs will go too. `artefacts/` is git-ignored; keep it, and the Postgres data directory, out of any machine backup.
+The job's output goes to `artefacts/run-<UTC timestamp>.launchd.log`. Each refresh also writes a log to its own run directory, `artefacts/run-<UTC timestamp>/`, where trained models, batch files and eval outputs will go too. `artefacts/` is git-ignored; keep it, and the Postgres data directory, out of any machine backup.
