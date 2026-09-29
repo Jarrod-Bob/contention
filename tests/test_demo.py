@@ -1,9 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
 import psycopg
+import pytest
 from typer.testing import CliRunner
 
-from contention import db, demo
+from contention import cli, db, demo
 from contention.cli import NICHES_DIR, app
 from contention.niche import TIERS, load_niche
 
@@ -11,6 +12,13 @@ runner = CliRunner()
 NOW = datetime(2026, 9, 27, tzinfo=UTC)
 TIER_BOUNDS = {"1k-10k": (1_000, 10_000), "10k-100k": (10_000, 100_000), "100k-500k": (100_000, 500_000),
                "500k-1M": (500_000, 1_000_000), "1M+": (1_000_000, 10**12)}
+
+
+@pytest.fixture(autouse=True)
+def artefacts_dir(tmp_path, monkeypatch):
+    """Keep refresh runs out of the repo's artefacts/ directory."""
+    monkeypatch.setattr(cli, "ARTEFACTS_DIR", tmp_path / "artefacts")
+    return tmp_path / "artefacts"
 
 
 def demo_niche():
@@ -118,8 +126,20 @@ def test_refresh_runs_on_the_demo_database_without_an_api_key(database_url):
 
     assert result.exit_code == 0, result.output
     assert demo.BANNER in result.output
+    assert "deleted 0 Channels, 0 Videos, 0 Snapshots" in result.output  # the purge runs, and a fresh demo is clean
     with psycopg.connect(database_url) as conn:
         assert conn.execute("SELECT count(DISTINCT taken_at) FROM video_snapshots").fetchone() == (4,)
+
+
+def test_search_runs_on_the_demo_database(database_url):
+    invoke("demo", DEMO_DATABASE_URL=database_url)
+
+    result = invoke("search", "code review", DATABASE_URL=database_url)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0] == demo.BANNER
+    assert lines[1].startswith(" 1.") and "My first code review got 47 comments" in lines[1]
 
 
 def test_refresh_on_the_demo_database_only_takes_the_demo_niche(database_url):
