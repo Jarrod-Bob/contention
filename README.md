@@ -50,4 +50,17 @@ Requires macOS with [Homebrew](https://brew.sh) and [uv](https://docs.astral.sh/
 
 The app connects to `DATABASE_URL` (default `postgresql:///contention`). Tests use `TEST_DATABASE_URL` (default `postgresql:///contention_test`) and wipe it on every run.
 
+## LLM providers
+
+YouTube data (Corpus titles, descriptions and anything derived from them) only goes to providers that don't train on it and don't keep it past 30 days ([spec §2](docs/spec/mvp.md), [#47](https://github.com/Jarrod-Bob/contention/issues/47)). Every LLM client is built by `contention.llm`, which enforces the parts code can: OpenRouter requests always send `provider: {zdr: true, data_collection: "deny"}`, Ollama must be local with cloud models off, LangSmith tracing is off, real Drafts only go to Claude or the local Ollama model, and each Message Batch is deleted once its results are stored. Put `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY` in `.env`.
+
+The rest are one-time account settings that code can't check. Set them before sending anything:
+
+- **OpenRouter** ([privacy settings](https://openrouter.ai/settings/privacy)):
+  - prompt and output logging: **off** (OpenRouter's terms let it use, distribute and sell logged inputs);
+  - the product-improvement opt-in (discount for sharing your data): **off**;
+  - model training: **opted out**, for free models **and** paid models.
+- **Ollama:** run the server with cloud models off, e.g. `OLLAMA_NO_CLOUD=1 ollama serve`, or for the macOS app `launchctl setenv OLLAMA_NO_CLOUD 1` and restart it. contention also refuses `*-cloud` models and non-local `OLLAMA_HOST`s.
+- **Anthropic:** nothing to change; the API doesn't train on inputs and deletes them within 30 days. Don't use its Files API for YouTube data.
+
 Niche-specific data lives in [`niches/`](niches/), one folder per Niche, holding only what you wrote yourself (see [ADR 0001](docs/adr/0001-niche-is-a-curated-channel-list.md)).
