@@ -10,7 +10,8 @@ API Data (spec §2, decision #47):
 - Ollama, local only, with Ollama's cloud models off.
 
 No hosted tracing: LangSmith is switched off whenever a client is built. Real Drafts
-only go to Claude (ADR 0002).
+never go to OpenRouter: only to Claude, or to the local Ollama model, which infers a
+Draft's Audience without the Draft leaving the machine (ADR 0002, spec §2).
 """
 
 import json
@@ -43,12 +44,12 @@ def chat_model(spec: str, *, real_draft: bool = False, transport: httpx2.MockTra
     `openrouter:qwen/qwen3.8-27b:free` or `ollama:qwen3:8b`.
 
     Pass `real_draft=True` when the prompt will carry a real (not sample) Draft: only
-    Claude is allowed then. `transport` replaces OpenRouter's HTTP transport (sync and
+    Claude and the local Ollama model are allowed then. `transport` replaces OpenRouter's HTTP transport (sync and
     async), for tests.
     """
     provider, _, model = spec.partition(":")
-    if real_draft and provider != "anthropic":
-        raise ProviderNotAllowed(f"real Drafts only go to Claude, not {spec}")
+    if real_draft and provider not in ("anthropic", "ollama"):
+        raise ProviderNotAllowed(f"real Drafts only go to Claude or the local Ollama model, not {spec}")
     guard_environment()
     if provider == "anthropic":
         return ChatAnthropic(model=model, effort=CLAUDE_EFFORT, max_tokens=MAX_TOKENS)
@@ -60,7 +61,12 @@ def chat_model(spec: str, *, real_draft: bool = False, transport: httpx2.MockTra
 
 
 def guard_environment() -> None:
-    """Switch off hosted tracing and Ollama's cloud models for this process."""
+    """Switch off hosted tracing for this process.
+
+    Also sets `OLLAMA_NO_CLOUD=1`, but that only reaches an Ollama server this process
+    starts; a server already running needs it set when it starts (see the README). The
+    real guard is `_ollama` refusing cloud models and remote hosts.
+    """
     os.environ["LANGSMITH_TRACING"] = "false"
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
     langsmith.configure(enabled=False)  # wins over any tracing environment variable
@@ -73,8 +79,8 @@ def _openrouter(model: str, transport: httpx2.MockTransport | None) -> ChatOpenA
         base_url=OPENROUTER_API,
         api_key=os.environ.get("OPENROUTER_API_KEY"),
         max_tokens=MAX_TOKENS,
-        http_client=httpx2.Client(transport=_ZeroRetention(transport or httpx2.HTTPTransport())),
-        http_async_client=httpx2.AsyncClient(transport=_AsyncZeroRetention(transport or httpx2.AsyncHTTPTransport())),
+        http_client=httpx2.Client(transport=_ProviderSettingsTransport(transport or httpx2.HTTPTransport())),
+        http_async_client=httpx2.AsyncClient(transport=_AsyncProviderSettingsTransport(transport or httpx2.AsyncHTTPTransport())),
     )
 
 
@@ -94,7 +100,7 @@ def _with_provider_settings(request: httpx2.Request) -> httpx2.Request:
     )
 
 
-class _ZeroRetention(httpx2.BaseTransport):
+class _ProviderSettingsTransport(httpx2.BaseTransport):
     def __init__(self, inner: httpx2.BaseTransport):
         self._inner = inner
 
@@ -105,7 +111,7 @@ class _ZeroRetention(httpx2.BaseTransport):
         self._inner.close()
 
 
-class _AsyncZeroRetention(httpx2.AsyncBaseTransport):
+class _AsyncProviderSettingsTransport(httpx2.AsyncBaseTransport):
     def __init__(self, inner: httpx2.AsyncBaseTransport):
         self._inner = inner
 

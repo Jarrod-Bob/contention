@@ -94,7 +94,7 @@ def test_ollama_runs_local_with_cloud_models_off():
     model = chat_model("ollama:qwen3:8b")
 
     assert isinstance(model, ChatOllama)
-    assert os.environ["OLLAMA_NO_CLOUD"] == "1"
+    assert os.environ["OLLAMA_NO_CLOUD"] == "1"  # for a server started from here; cloud models are refused below
 
 
 @pytest.mark.parametrize("spec", ["ollama:gpt-oss:120b-cloud", "ollama:qwen3-coder:480b-cloud"])
@@ -127,14 +127,16 @@ def test_hosted_tracing_is_off_even_when_the_environment_turns_it_on(monkeypatch
     assert os.environ["LANGCHAIN_TRACING_V2"] == "false"
 
 
-def test_a_real_draft_can_go_to_claude():
-    model = chat_model("anthropic:claude-opus-5-5", real_draft=True)
+@pytest.mark.parametrize("spec, model_type", [
+    ("anthropic:claude-opus-5-5", ChatAnthropic),
+    ("ollama:qwen3:8b", ChatOllama),  # local: infers the Draft's Audience without it leaving the machine
+])
+def test_a_real_draft_can_go_to_claude_or_the_local_model(spec, model_type):
+    assert isinstance(chat_model(spec, real_draft=True), model_type)
 
-    assert isinstance(model, ChatAnthropic)
 
-
-@pytest.mark.parametrize("spec", ["openrouter:qwen/qwen3.8-27b:free", "ollama:qwen3:8b"])
-def test_a_real_draft_cannot_reach_a_non_claude_model(spec):
+@pytest.mark.parametrize("spec", ["openrouter:qwen/qwen3.8-27b:free", "openrouter:anthropic/claude-opus-5.5"])
+def test_a_real_draft_never_goes_to_openrouter(spec):
     transport, bodies = fake_openrouter()
 
     with pytest.raises(ProviderNotAllowed):

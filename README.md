@@ -52,7 +52,7 @@ The app connects to `DATABASE_URL` (default `postgresql:///contention`). Tests u
 
 ## LLM providers
 
-YouTube data (Corpus titles, descriptions and anything derived from them) only goes to providers that don't train on it and don't keep it past 30 days ([spec §2](docs/spec/mvp.md), [#47](https://github.com/Jarrod-Bob/contention/issues/47)). Every LLM client is built by `contention.llm`, which enforces the parts code can: OpenRouter requests always send `provider: {zdr: true, data_collection: "deny"}`, Ollama must be local with cloud models off, LangSmith tracing is off, real Drafts only go to Claude, and each Message Batch is deleted once its results are stored. Put `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY` in `.env`.
+YouTube data (Corpus titles, descriptions and anything derived from them) only goes to providers that don't train on it and don't keep it past 30 days ([spec §2](docs/spec/mvp.md), [#47](https://github.com/Jarrod-Bob/contention/issues/47)). Every LLM client is built by `contention.llm`, which enforces the parts code can: OpenRouter requests always send `provider: {zdr: true, data_collection: "deny"}`, Ollama must be local with cloud models off, LangSmith tracing is off, real Drafts only go to Claude or the local Ollama model, and each Message Batch is deleted once its results are stored. Put `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY` in `.env`.
 
 The rest are one-time account settings that code can't check. Set them before sending anything:
 
