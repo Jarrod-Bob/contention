@@ -13,6 +13,7 @@ from contention.channels import add_channel
 from contention.collect import refresh as refresh_corpus
 from contention.niche import TIERS, load_niche
 from contention.purge import purge
+from contention.search import search
 from contention.youtube import HttpYouTube
 
 NICHES_DIR = Path(__file__).resolve().parents[2] / "niches"
@@ -87,3 +88,18 @@ def refresh(niche: str = NICHE_OPTION) -> None:
         typer.echo(line)
     for handle in report.unknown_handles:
         typer.echo(f"warning: YouTube has no Channel with the handle {handle}", err=True)
+
+
+@app.command("search")
+def search_command(
+    query: str = typer.Argument(help="Words to look for in Video titles, Chapters, tags and descriptions."),
+    limit: int = typer.Option(10, help="How many Videos to show."),
+    niche: str = NICHE_OPTION,
+) -> None:
+    """Keyword-search the Niche's Videos (BM25) and print them best first."""
+    with db.connect() as conn:
+        results = search(conn, niche, query, limit=limit)
+    if not results:
+        typer.echo(f"no Videos match {query!r}")
+    for rank, result in enumerate(results, start=1):
+        typer.echo(f"{rank:>2}. {result.score:6.2f}  {result.title}  [{result.channel_title}]  {result.video_id}")

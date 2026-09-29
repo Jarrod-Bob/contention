@@ -4,6 +4,7 @@ from typer.testing import CliRunner
 from contention import cli, db
 from contention.cli import app
 
+from corpus_rows import insert_channel, insert_video
 from fake_youtube import FakeYouTube, channel_details, video_details
 
 runner = CliRunner()
@@ -44,3 +45,31 @@ def test_refresh_purges_channels_dropped_from_the_list_and_logs_the_run(database
         assert conn.execute("SELECT channel_id FROM channels").fetchall() == [("UC1",)]
     [log] = (tmp_path / "artefacts").glob("run-*/refresh.log")
     assert "refreshed 1 Channels" in log.read_text()
+
+
+def test_search_prints_ranked_videos(database_url):
+    with psycopg.connect(database_url) as conn:
+        db.migrate(conn, db.MIGRATIONS_DIR)
+        insert_channel(conn, "UC1", "tech-careers")
+        insert_video(conn, "v-title", title="Salary negotiation tips")
+        insert_video(conn, "v-desc", title="My week", cleaned_description="A word on salary")
+        for n in range(4):
+            insert_video(conn, f"v-none-{n}", title="Unrelated")
+
+    result = runner.invoke(app, ["search", "salary"], env={"DATABASE_URL": database_url})
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith(" 1.") and "Salary negotiation tips" in lines[0] and "v-title" in lines[0]
+    assert lines[1].startswith(" 2.") and "My week" in lines[1] and "Channel UC1" in lines[1]
+
+
+def test_search_says_when_nothing_matches(database_url):
+    with psycopg.connect(database_url) as conn:
+        db.migrate(conn, db.MIGRATIONS_DIR)
+
+    result = runner.invoke(app, ["search", "salary"], env={"DATABASE_URL": database_url})
+
+    assert result.exit_code == 0, result.output
+    assert "no Videos match" in result.output
