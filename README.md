@@ -9,7 +9,7 @@ A content intelligence tool, built as a hands-on way to learn LLMs, hybrid RAG, 
 
 ## Status
 
-Being built from the [MVP spec](docs/spec/mvp.md). Decisions are recorded in [`docs/adr/`](docs/adr/) and the vocabulary in [`CONTEXT.md`](CONTEXT.md).
+Being built from the [MVP spec](docs/spec/mvp.md). Decisions are recorded in [`docs/adr/`](docs/adr/) and the vocabulary in [`CONTEXT.md`](CONTEXT.md). Guides to how parts of it work, and why, are in [`docs/guides/`](docs/guides/), starting with [keyword search](docs/guides/keyword-search.md).
 
 ## Development setup
 

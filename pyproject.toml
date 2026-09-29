@@ -21,7 +21,10 @@ dependencies = [
 contention = "contention.cli:app"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "rank-bm25>=0.2.2",
+]
 
 [build-system]
 requires = ["hatchling"]
