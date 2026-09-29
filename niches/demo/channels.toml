@@ -1,0 +1,34 @@
+# The made-up Channels of the synthetic demo Corpus, one or two per Tier.
+# Their handles start with "@demo." and their synthetic data lives in
+# src/contention/demo.py; `contention demo` and `contention refresh` on the demo
+# database never ask YouTube about them.
+
+[[channels]]
+handle = "@demo.firstcommit"
+tier = "1k-10k"
+reason = "A bootcamp graduate's first year as a junior developer"
+
+[[channels]]
+handle = "@demo.queuetheinterview"
+tier = "1k-10k"
+reason = "Mock coding interviews with viewers"
+
+[[channels]]
+handle = "@demo.standupnotes"
+tier = "10k-100k"
+reason = "Day-in-the-life and workplace habits of a mid-level engineer"
+
+[[channels]]
+handle = "@demo.offerladder"
+tier = "100k-500k"
+reason = "Salary negotiation, promotions and job offers"
+
+[[channels]]
+handle = "@demo.systemsketch"
+tier = "500k-1M"
+reason = "System design interview preparation"
+
+[[channels]]
+handle = "@demo.careerstackweekly"
+tier = "1M+"
+reason = "Commentary and news on the tech job market"
