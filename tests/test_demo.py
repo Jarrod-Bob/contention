@@ -147,3 +147,14 @@ def test_a_regular_database_is_not_the_demo(conn):
     db.migrate(conn, db.MIGRATIONS_DIR)
     assert not demo.is_demo(conn)
 
+
+
+def test_channels_add_refuses_the_demo_niche():
+    before = (NICHES_DIR / demo.NICHE / "channels.toml").read_text()
+
+    result = runner.invoke(app, ["channels", "add", "@real", "--tier", "1k-10k", "--reason", "Real", "--niche", "demo"],
+                           env={"YOUTUBE_API_KEY": ""})
+
+    assert result.exit_code == 1
+    assert "made-up Channels" in result.output
+    assert (NICHES_DIR / demo.NICHE / "channels.toml").read_text() == before

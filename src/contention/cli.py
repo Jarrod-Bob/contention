@@ -41,8 +41,7 @@ def main() -> None:
 def _youtube() -> HttpYouTube:
     key = os.environ.get("YOUTUBE_API_KEY")
     if not key:
-        typer.echo("No YOUTUBE_API_KEY in .env. Run scripts/setup-youtube-api-key.sh first.", err=True)
-        raise typer.Exit(1)
+        _fail("No YOUTUBE_API_KEY in .env. Run scripts/setup-youtube-api-key.sh first.")
     return HttpYouTube(key)
 
 
@@ -66,11 +65,12 @@ def channels_add(
     niche: str = NICHE_OPTION,
 ) -> None:
     """Add a Channel to the Niche's Channel list (checks the handle with YouTube: 1 quota unit)."""
+    if niche == demo.NICHE:
+        _fail("The demo Niche lists only made-up Channels: edit niches/demo/channels.toml and src/contention/demo.py.")
     try:
         add_channel(NICHES_DIR / niche, _youtube(), handle, tier, reason)
     except ValueError as error:
-        typer.echo(str(error), err=True)
-        raise typer.Exit(1)
+        _fail(str(error))
     typer.echo(f"added {handle} ({tier}) to {niche}")
 
 
