@@ -78,3 +78,13 @@ scripts/install-refresh-job.sh --uninstall  # remove it
 ```
 
 The job's output goes to `artefacts/run-<UTC timestamp>.launchd.log`. Each refresh also writes a log to its own run directory, `artefacts/run-<UTC timestamp>/`, where trained models, batch files and eval outputs will go too. `artefacts/` is git-ignored; keep it, and the Postgres data directory, out of any machine backup.
+
+## Demo data
+
+Screenshots, examples and demos use only a synthetic demo Corpus: made-up Channels (one or two per Tier, listed in [`niches/demo/`](niches/demo/)) and made-up Videos with titles, descriptions, Chapters, durations and a short Snapshot history. Nothing in it comes from YouTube, and its numbers are illustrative. Load it into its own database, `contention_demo` (or `DEMO_DATABASE_URL`), with no API key:
+
+```sh
+uv run contention demo
+```
+
+It creates the database if needed and replaces its contents on every run; it refuses to overwrite a database that isn't a demo database. Point other commands at it with `DATABASE_URL`, e.g. `DATABASE_URL=postgresql:///contention_demo uv run contention refresh`, which then reads the synthetic Corpus instead of YouTube and prints a "demo data" notice, or `contention search`.
