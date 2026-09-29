@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Runs `contention refresh` weekly (Sundays at 03:00). A template: install it with
+  scripts/install-refresh-job.sh, which fills in __REPO__ and __UV__.
+  If the Mac is asleep at that time, launchd runs the job when it wakes.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.contention.refresh</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__UV__</string>
+        <string>run</string>
+        <string>contention</string>
+        <string>refresh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>__REPO__/artefacts/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>__REPO__/artefacts/launchd.log</string>
+</dict>
+</plist>
