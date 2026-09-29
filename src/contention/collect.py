@@ -9,6 +9,7 @@ from contention.text import clean_description, parse_chapters
 from contention.youtube import ChannelDetails, VideoDetails, YouTube
 
 WINDOW = timedelta(days=3 * 365)  # the Corpus holds Videos from the last 3 years
+RETENTION = timedelta(days=28)  # API Data, and anything derived from it, is kept at most this long
 SHORTS_MAX_SECONDS = 180  # Shorts run up to 3 minutes; long-form is anything longer
 
 

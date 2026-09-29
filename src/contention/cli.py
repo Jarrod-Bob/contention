@@ -8,12 +8,15 @@ import typer
 from dotenv import load_dotenv
 
 from contention import db
+from contention.artefacts import run_dir
 from contention.channels import add_channel
 from contention.collect import refresh as refresh_corpus
 from contention.niche import TIERS, load_niche
+from contention.purge import purge
 from contention.youtube import HttpYouTube
 
 NICHES_DIR = Path(__file__).resolve().parents[2] / "niches"
+ARTEFACTS_DIR = Path(__file__).resolve().parents[2] / "artefacts"
 
 app = typer.Typer()
 channels_app = typer.Typer(help="Curate the Channels of a Niche.")
@@ -66,10 +69,21 @@ def channels_add(
 
 @app.command()
 def refresh(niche: str = NICHE_OPTION) -> None:
-    """Collect the Niche's Channels and their long-form English Videos from YouTube."""
+    """Collect the Niche's Channels and their long-form English Videos, then delete what the Corpus may no longer hold."""
     youtube = _youtube()
+    curated = load_niche(NICHES_DIR / niche)
+    now = datetime.now(UTC)
+    run = run_dir(ARTEFACTS_DIR, now)
     with db.connect() as conn:
-        report = refresh_corpus(conn, youtube, load_niche(NICHES_DIR / niche), now=datetime.now(UTC))
-    typer.echo(f"refreshed {report.channels} Channels and {report.videos} Videos ({report.quota_used} quota units)")
+        report = refresh_corpus(conn, youtube, curated, now=now)
+        purged = purge(conn, curated, ARTEFACTS_DIR, now)
+    lines = [
+        f"refreshed {report.channels} Channels and {report.videos} Videos ({report.quota_used} quota units)",
+        f"deleted {purged.channels} Channels, {purged.videos} Videos, {purged.snapshots} Snapshots"
+        f" and {purged.runs} artefact runs",
+    ]
+    (run / "refresh.log").write_text("\n".join(lines) + "\n")
+    for line in lines:
+        typer.echo(line)
     for handle in report.unknown_handles:
         typer.echo(f"warning: YouTube has no Channel with the handle {handle}", err=True)
